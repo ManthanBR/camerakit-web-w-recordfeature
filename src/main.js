@@ -43,6 +43,7 @@ import "./styles/index.v3.css"
 
   //Get canvas element for live render target
   const liveRenderTarget = document.getElementById("canvas")
+  const captureRenderTarget = document.getElementById("captureCanvas")
 
   //Create camera kit session and assign liveRenderTarget canvas to render out live render target from camera kit
   const session = await cameraKit.createSession({ liveRenderTarget })
@@ -81,6 +82,11 @@ import "./styles/index.v3.css"
     //first check if it should start record or stop record
     // even number = start, odd number = stop
     if (recordPressedCount % 2 == 0) {
+      //disable live canvas so the capture canvas that is behind live canvas will be shown instead
+      // capture canvas z-index is set behind live canvas in css
+      liveRenderTarget.style.display = "none"
+      //play capture render target so capture canvas will render lens
+      await session.play("capture")
       //Manage media recorder and start recording
       manageMediaRecorder(session)
 
@@ -182,7 +188,7 @@ import "./styles/index.v3.css"
         const audioTrack = audioVideoStream.getAudioTracks()[0]
 
         // Get the canvas stream (video only)
-        const canvasStream = liveRenderTarget.captureStream(60)
+        const canvasStream = session.output.capture.captureStream(60)
 
         // Add the audio track to the canvas stream
         canvasStream.addTrack(audioTrack)
@@ -256,11 +262,15 @@ import "./styles/index.v3.css"
       }
     }
 
-    document.getElementById("back-button").addEventListener("click", () => {
+    document.getElementById("back-button").addEventListener("click", async () => {
       //TODO: Add logic to go back to recording
       actionbutton.style.display = "none"
       backButtonContainer.style.display = "none"
       switchButton.style.display = "block"
+      //show live render targetcanvas again
+      liveRenderTarget.style.display = "block"
+      //need to play live target for canvas to show anything
+      await session.play("live")
       RecordButtonToggle(true)
     })
   }
