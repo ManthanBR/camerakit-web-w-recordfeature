@@ -20,8 +20,9 @@
     "webpack-cli": "^5.1.1"
   },
   "dependencies": {
+    "@ffmpeg/core": "^0.12.10",
     "@ffmpeg/ffmpeg": "^0.12.10",
-    "@ffmpeg/util": "^0.12.1",
+    "@ffmpeg/util": "^0.12.2",
     "@snap/camera-kit": "^1.2.0",
     "dotenv": "^16.4.7",
     "dotenv-webpack": "^8.1.0",

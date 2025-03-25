@@ -110,28 +110,32 @@ import "./styles/index.v3.css"
 
   //To convert recorded video to proper mp4 format that can be shared to social media
   async function fixVideoDuration(blob) {
-    console.log(blob)
-    // Load FFmpeg.js
-    const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd"
-    await ffmpeg.load({
-      coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-      wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
-    })
+    try {
+      console.log("Loading FFmpeg...")
+      const baseURL = "/ffmpeg"
 
-    // Write the input video blob to FFmpeg's virtual filesystem
-    await ffmpeg.writeFile("input.mp4", await fetchFile(blob))
+      // Add logging to debug the loading process
+      console.log("Loading FFmpeg with URLs:", {
+        coreURL: `${baseURL}/ffmpeg-core.js`,
+        wasmURL: `${baseURL}/ffmpeg-core.wasm`,
+      })
 
-    // Reprocess the video to ensure metadata is added correctly
-    await ffmpeg.exec(["-i", "input.mp4", "-movflags", "faststart", "-c", "copy", "output.mp4"])
+      await ffmpeg.load({
+        coreURL: `${baseURL}/ffmpeg-core.js`,
+        wasmURL: `${baseURL}/ffmpeg-core.wasm`,
+      })
 
-    // Read the fixed video file from the virtual filesystem
-    const fixedData = await ffmpeg.readFile("output.mp4")
+      console.log("FFmpeg loaded successfully")
 
-    // Create a new Blob for the fixed video
-    const fixedBlob = new Blob([fixedData.buffer], { type: "video/mp4" })
-
-    // Return the fixed Blob
-    return fixedBlob
+      // Rest of your FFmpeg processing code...
+      await ffmpeg.writeFile("input.mp4", await fetchFile(blob))
+      await ffmpeg.exec(["-i", "input.mp4", "-movflags", "faststart", "-c", "copy", "output.mp4"])
+      const fixedData = await ffmpeg.readFile("output.mp4")
+      return new Blob([fixedData.buffer], { type: "video/mp4" })
+    } catch (error) {
+      console.error("Error in fixVideoDuration:", error)
+      throw error
+    }
   }
 
   //Function to toggle record button visibility
