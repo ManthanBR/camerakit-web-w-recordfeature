@@ -25,6 +25,10 @@ module.exports = {
           filename: "assets/[name][ext]",
         },
       },
+      {
+        test: /\.wasm$/,
+        type: "asset/resource",
+      },
     ],
   },
   optimization: {
@@ -43,7 +47,9 @@ module.exports = {
   },
   devServer: {
     static: {
-      directory: path.join(__dirname, "build"),
+      directory: path.join(__dirname, "public"),
+      publicPath: "/",
+      watch: true,
     },
     client: {
       logging: "none",
@@ -58,6 +64,7 @@ module.exports = {
     headers: {
       "Cross-Origin-Opener-Policy": "same-origin",
       "Cross-Origin-Embedder-Policy": "require-corp",
+      "Access-Control-Allow-Origin": "*",
     },
     onListening: function (devServer) {
       if (!devServer) {
@@ -101,6 +108,10 @@ module.exports = {
         {
           from: "./src/assets",
           to: "assets",
+        },
+        {
+          from: "./public/ffmpeg",
+          to: "ffmpeg",
         },
       ],
     }),

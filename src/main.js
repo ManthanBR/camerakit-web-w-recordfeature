@@ -43,7 +43,6 @@ import "./styles/index.v3.css"
 
   //Get canvas element for live render target
   const liveRenderTarget = document.getElementById("canvas")
-  const captureRenderTarget = document.getElementById("captureCanvas")
 
   //Create camera kit session and assign liveRenderTarget canvas to render out live render target from camera kit
   const session = await cameraKit.createSession({ liveRenderTarget })
@@ -82,11 +81,6 @@ import "./styles/index.v3.css"
     //first check if it should start record or stop record
     // even number = start, odd number = stop
     if (recordPressedCount % 2 == 0) {
-      //disable live canvas so the capture canvas that is behind live canvas will be shown instead
-      // capture canvas z-index is set behind live canvas in css
-      liveRenderTarget.style.display = "none"
-      //play capture render target so capture canvas will render lens
-      await session.play("capture")
       //Manage media recorder and start recording
       manageMediaRecorder(session)
 
@@ -116,28 +110,32 @@ import "./styles/index.v3.css"
 
   //To convert recorded video to proper mp4 format that can be shared to social media
   async function fixVideoDuration(blob) {
-    console.log(blob)
-    // Load FFmpeg.js
-    const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd"
-    await ffmpeg.load({
-      coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-      wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
-    })
+    try {
+      console.log("Loading FFmpeg...")
+      const baseURL = "/ffmpeg"
 
-    // Write the input video blob to FFmpeg's virtual filesystem
-    await ffmpeg.writeFile("input.mp4", await fetchFile(blob))
+      // Add logging to debug the loading process
+      console.log("Loading FFmpeg with URLs:", {
+        coreURL: `${baseURL}/ffmpeg-core.js`,
+        wasmURL: `${baseURL}/ffmpeg-core.wasm`,
+      })
 
-    // Reprocess the video to ensure metadata is added correctly
-    await ffmpeg.exec(["-i", "input.mp4", "-movflags", "faststart", "-c", "copy", "output.mp4"])
+      await ffmpeg.load({
+        coreURL: `${baseURL}/ffmpeg-core.js`,
+        wasmURL: `${baseURL}/ffmpeg-core.wasm`,
+      })
 
-    // Read the fixed video file from the virtual filesystem
-    const fixedData = await ffmpeg.readFile("output.mp4")
+      console.log("FFmpeg loaded successfully")
 
-    // Create a new Blob for the fixed video
-    const fixedBlob = new Blob([fixedData.buffer], { type: "video/mp4" })
-
-    // Return the fixed Blob
-    return fixedBlob
+      // Rest of your FFmpeg processing code...
+      await ffmpeg.writeFile("input.mp4", await fetchFile(blob))
+      await ffmpeg.exec(["-i", "input.mp4", "-movflags", "faststart", "-c", "copy", "output.mp4"])
+      const fixedData = await ffmpeg.readFile("output.mp4")
+      return new Blob([fixedData.buffer], { type: "video/mp4" })
+    } catch (error) {
+      console.error("Error in fixVideoDuration:", error)
+      throw error
+    }
   }
 
   //Function to toggle record button visibility
@@ -188,7 +186,7 @@ import "./styles/index.v3.css"
         const audioTrack = audioVideoStream.getAudioTracks()[0]
 
         // Get the canvas stream (video only)
-        const canvasStream = session.output.capture.captureStream(60)
+        const canvasStream = liveRenderTarget.captureStream(60)
 
         // Add the audio track to the canvas stream
         canvasStream.addTrack(audioTrack)
@@ -262,15 +260,11 @@ import "./styles/index.v3.css"
       }
     }
 
-    document.getElementById("back-button").addEventListener("click", async () => {
+    document.getElementById("back-button").addEventListener("click", () => {
       //TODO: Add logic to go back to recording
       actionbutton.style.display = "none"
       backButtonContainer.style.display = "none"
       switchButton.style.display = "block"
-      //show live render targetcanvas again
-      liveRenderTarget.style.display = "block"
-      //need to play live target for canvas to show anything
-      await session.play("live")
       RecordButtonToggle(true)
     })
   }
