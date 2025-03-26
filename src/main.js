@@ -41,7 +41,7 @@ import "./styles/index.v3.css"
   //Set camera constraints based on device type
   const constraints = {
     video: {
-      facingMode: isMobile ? { exact: "user" } : "user",
+      facingMode: isMobile ? { exact: "environment" } : "environment",
     },
     audio: true,
   }
@@ -54,7 +54,7 @@ import "./styles/index.v3.css"
 
   // Request media stream with set camera perference
   let mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
-  const source = createMediaStreamSource(mediaStream, { cameraType: "user", disableSourceAudio: false })
+  const source = createMediaStreamSource(mediaStream, { cameraType: "environment", disableSourceAudio: false })
 
   //Set up source settings so that it renders out correctly on browser
   await session.setSource(source)
