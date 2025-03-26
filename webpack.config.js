@@ -5,6 +5,9 @@ const HtmlWebpackPlugin = require("html-webpack-plugin")
 const MiniCssExtractPlugin = require("mini-css-extract-plugin")
 const webpack = require("webpack")
 
+// Check if we're in development mode (local testing)
+const isDevelopment = process.env.NODE_ENV !== "production"
+
 module.exports = {
   entry: "./src/main.js",
   output: {
@@ -96,10 +99,18 @@ module.exports = {
     },
   },
   plugins: [
-    new Dotenv(),
+    // Use Dotenv only in development
+    isDevelopment
+      ? new Dotenv()
+      : new webpack.DefinePlugin({
+          "process.env.API_TOKEN": JSON.stringify(process.env.API_TOKEN),
+          "process.env.LENS_ID": JSON.stringify(process.env.LENS_ID),
+          "process.env.GROUP_ID": JSON.stringify(process.env.GROUP_ID),
+        }),
     new HtmlWebpackPlugin({
       template: "./src/index.html",
       filename: "index.html",
+      favicon: "./src/assets/favicon.png",
     }),
     new MiniCssExtractPlugin({
       filename: "[name].[contenthash].css",
@@ -115,11 +126,6 @@ module.exports = {
           to: "ffmpeg",
         },
       ],
-    }),
-    new webpack.DefinePlugin({
-      "process.env.API_TOKEN": JSON.stringify(process.env.API_TOKEN),
-      "process.env.LENS_ID": JSON.stringify(process.env.LENS_ID),
-      "process.env.GROUP_ID": JSON.stringify(process.env.GROUP_ID),
     }),
   ],
 }

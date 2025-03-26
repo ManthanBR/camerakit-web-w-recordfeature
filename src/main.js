@@ -41,7 +41,7 @@ import "./styles/index.v3.css"
   //Set camera constraints based on device type
   const constraints = {
     video: {
-      facingMode: isMobile ? { exact: "environment" } : "environment",
+      facingMode: isMobile ? { exact: "user" } : "user",
     },
     audio: true,
   }
@@ -54,12 +54,12 @@ import "./styles/index.v3.css"
 
   // Request media stream with set camera perference
   let mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
-  const source = createMediaStreamSource(mediaStream, { cameraType: "environment", disableSourceAudio: false })
+  const source = createMediaStreamSource(mediaStream, { cameraType: "user", disableSourceAudio: false })
 
   //Set up source settings so that it renders out correctly on browser
   await session.setSource(source)
   //only for front camera use
-  //source.setTransform(Transform2D.MirrorX)
+  source.setTransform(Transform2D.MirrorX)
   await source.setRenderSize(window.innerWidth, window.innerHeight)
   await session.setFPSLimit(60)
   await session.play() //plays live target by default
@@ -83,21 +83,17 @@ import "./styles/index.v3.css"
   const backButtonContainer = document.getElementById("back-button-container")
 
   recordButton.addEventListener("click", async () => {
-    //first check if it should start record or stop record
-    // even number = start, odd number = stop
     if (recordPressedCount % 2 == 0) {
-      //Manage media recorder and start recording
+      // Start recording
       manageMediaRecorder(session)
-
-      //Show stop record button
       recordButton.style.backgroundImage = "url('./assets/RecordStop.png')"
     } else {
-      //hide stop record button
-      RecordButtonToggle(false)
-      //switch back to record button when recording stopped
-      recordButton.style.backgroundImage = "url('./assets/RecordButton.png')"
-      //Stop media recording
-      mediaRecorder.stop()
+      // Stop recording
+      if (mediaRecorder && mediaRecorder.state === "recording") {
+        mediaRecorder.stop()
+        RecordButtonToggle(false)
+        recordButton.style.backgroundImage = "url('./assets/RecordButton.png')"
+      }
     }
     recordPressedCount += 1
   })
@@ -159,6 +155,13 @@ import "./styles/index.v3.css"
     isBackFacing = !isBackFacing
 
     if (mediaStream) {
+      // Stop the media recorder if it's active
+      if (mediaRecorder && mediaRecorder.state === "recording") {
+        mediaRecorder.stop()
+        RecordButtonToggle(false)
+        recordButton.style.backgroundImage = "url('./assets/RecordButton.png')"
+        recordPressedCount = 0 // Reset the record button state
+      }
       session.pause()
       mediaStream.getVideoTracks()[0].stop()
     }
@@ -167,6 +170,7 @@ import "./styles/index.v3.css"
       video: {
         facingMode: isBackFacing ? (isMobile ? { exact: "environment" } : "environment") : isMobile ? { exact: "user" } : "user",
       },
+      audio: true,
     })
 
     const source = createMediaStreamSource(mediaStream, {
@@ -175,17 +179,25 @@ import "./styles/index.v3.css"
 
     await session.setSource(source)
     if (!isBackFacing) {
-     // source.setTransform(Transform2D.MirrorX)
+      source.setTransform(Transform2D.MirrorX)
     }
     updateRenderSize()
     await session.play()
+
+    // Show record button after camera switch
+    RecordButtonToggle(true)
   }
 
   //Function to setup media recorder and start recording
   function manageMediaRecorder(session) {
     // First get user's camera and microphone
     navigator.mediaDevices
-      .getUserMedia({ video: true, audio: true })
+      .getUserMedia({
+        video: {
+          facingMode: isBackFacing ? (isMobile ? { exact: "environment" } : "environment") : isMobile ? { exact: "user" } : "user",
+        },
+        audio: true,
+      })
       .then((audioVideoStream) => {
         // Extract just the audio track
         const audioTrack = audioVideoStream.getAudioTracks()[0]
@@ -201,14 +213,15 @@ import "./styles/index.v3.css"
 
         console.log("create media recorder")
         recordedChunks = []
+
         // Handle recorded data once it is available
         mediaRecorder.ondataavailable = (event) => {
           console.log("start record")
-
           if (event.data && event.data.size > 0) {
             recordedChunks.push(event.data)
           }
         }
+
         // Handle recording data when recording stopped
         mediaRecorder.onstop = async () => {
           console.log("stop record")
@@ -222,11 +235,16 @@ import "./styles/index.v3.css"
           loadingIcon.style.display = "none"
           displayPostRecordButtons(url, fixedBlob)
         }
+
         //Start recording
         mediaRecorder.start()
       })
       .catch((error) => {
         console.error("Error accessing media devices:", error)
+        // Reset UI state if media recorder fails
+        recordPressedCount = 0
+        recordButton.style.backgroundImage = "url('./assets/RecordButton.png')"
+        RecordButtonToggle(true)
       })
   }
 
