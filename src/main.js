@@ -59,7 +59,7 @@ import "./styles/index.v3.css"
   //Set up source settings so that it renders out correctly on browser
   await session.setSource(source)
   //only for front camera use
-  source.setTransform(Transform2D.MirrorX)
+  //source.setTransform(Transform2D.MirrorX)
   await source.setRenderSize(window.innerWidth, window.innerHeight)
   await session.setFPSLimit(60)
   await session.play() //plays live target by default
@@ -174,8 +174,8 @@ import "./styles/index.v3.css"
     })
 
     await session.setSource(source)
-    if (isBackFacing) {
-      source.setTransform(Transform2D.MirrorX)
+    if (!isBackFacing) {
+     // source.setTransform(Transform2D.MirrorX)
     }
     updateRenderSize()
     await session.play()
