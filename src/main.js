@@ -156,7 +156,7 @@ import "./styles/index.v3.css"
 
   //Fucntion to switch camera between front & back
   async function updateCamera(session) {
-    isBackFacing = isBackFacing
+    isBackFacing = !isBackFacing
 
     if (mediaStream) {
       session.pause()
