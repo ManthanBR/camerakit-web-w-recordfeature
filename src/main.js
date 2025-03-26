@@ -174,7 +174,7 @@ import "./styles/index.v3.css"
     })
 
     await session.setSource(source)
-    if (!isBackFacing) {
+    if (isBackFacing) {
       source.setTransform(Transform2D.MirrorX)
     }
     updateRenderSize()
